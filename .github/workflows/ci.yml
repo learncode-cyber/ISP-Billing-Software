@@ -1,0 +1,146 @@
+name: CI
+
+# Every gate that protects a release runs here. A failure in any critical
+# job fails the pipeline — tenant isolation and entitlement in particular
+# are treated as release blockers, not advisories.
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend — lint, migrate, security
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: arq_isp_os
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_pgsql, mbstring, xml, curl, zip, redis
+          coverage: none
+
+      - name: PHP syntax check (all source)
+        run: |
+          fail=0
+          for f in $(find backend/app backend/routes backend/config backend/bootstrap backend/tests -name '*.php'); do
+            php -l "$f" > /dev/null || { echo "LINT FAIL: $f"; fail=1; }
+          done
+          exit $fail
+
+      - name: Create database roles
+        env: { PGPASSWORD: postgres }
+        run: |
+          psql -h localhost -U postgres -d arq_isp_os -c \
+            "CREATE ROLE arq_app_role LOGIN PASSWORD 'ci_pass';"
+          psql -h localhost -U postgres -d arq_isp_os -c \
+            "CREATE ROLE arq_platform_admin_role LOGIN PASSWORD 'ci_pass' BYPASSRLS;"
+
+      - name: Run migrations (fresh)
+        env: { PGPASSWORD: postgres }
+        run: |
+          for f in database/migrations/*.sql; do
+            echo "-> $f"
+            psql -h localhost -U postgres -v ON_ERROR_STOP=1 -d arq_isp_os -f "$f"
+          done
+
+      - name: Run seeders
+        env: { PGPASSWORD: postgres }
+        run: |
+          for f in database/seeders/*.sql; do
+            psql -h localhost -U postgres -v ON_ERROR_STOP=1 -d arq_isp_os -f "$f"
+          done
+
+      - name: Migration lint — every tenant table must enforce RLS
+        run: bash deployment/migration-lint.sh
+
+      - name: RLS coverage gate
+        env: { PGPASSWORD: postgres }
+        run: |
+          UNPROTECTED=$(psql -h localhost -U postgres -t -A -d arq_isp_os -c "
+            SELECT count(*) FROM information_schema.columns c
+            JOIN pg_class pc ON pc.relname = c.table_name
+            JOIN pg_namespace pn ON pn.oid = pc.relnamespace AND pn.nspname = c.table_schema
+            WHERE c.column_name='tenant_id' AND pc.relrowsecurity=false AND pc.relkind='r';")
+          echo "tenant tables without RLS: $UNPROTECTED"
+          test "$UNPROTECTED" -eq 0
+
+      - name: Tenant isolation security suite (RELEASE BLOCKER)
+        env: { PGPASSWORD: postgres }
+        run: |
+          psql -h localhost -U postgres -d arq_isp_os -f scripts/grant-ci-roles.sql
+          PGPASSWORD=ci_pass psql -h localhost -U arq_app_role -d arq_isp_os \
+            -v ON_ERROR_STOP=1 -f tests/sql/tenant_isolation.sql | tee /tmp/iso.txt
+          # Any FAIL line fails the build.
+          ! grep -q "FAIL" /tmp/iso.txt
+
+      - name: Entitlement suite
+        env: { PGPASSWORD: postgres }
+        run: |
+          psql -h localhost -U postgres -d arq_isp_os \
+            -v ON_ERROR_STOP=1 -f tests/sql/entitlement.sql | tee /tmp/ent.txt
+          ! grep -q "FAIL" /tmp/ent.txt
+
+      - name: Backup / restore drill
+        env: { PGPASSWORD: postgres }
+        run: bash scripts/ci-backup-restore-test.sh
+
+  frontend:
+    name: Frontend — build, offline & responsive contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        working-directory: frontend
+        run: npm ci || npm install
+
+      - name: Production build (all four apps)
+        working-directory: frontend
+        run: npm run build
+
+      - name: Verify all app entry points emitted
+        working-directory: frontend
+        run: |
+          for f in index.html portal.html technician.html platform.html; do
+            test -f "dist/$f" || { echo "MISSING BUILD OUTPUT: $f"; exit 1; }
+          done
+
+      - name: i18n parity — Bengali must cover every English key
+        working-directory: frontend
+        run: node scripts/i18n-parity.mjs
+
+      - name: Responsive contract check
+        working-directory: frontend
+        run: bash ../deployment/responsive-lint.sh
+
+      - name: Dead UI scan (no handler-less primary buttons)
+        working-directory: frontend
+        run: node scripts/dead-ui-scan.mjs
+
+      - name: Secret scan
+        run: bash deployment/secret-scan.sh

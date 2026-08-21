@@ -1,0 +1,555 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "AR Qudrix ISP OS API",
+    "description": "All-in-one Broadband ISP Management Platform with BTRC Compliance, Offline Support & Multi-Tenant Architecture",
+    "version": "1.0.0",
+    "contact": {
+      "name": "AR Qudrix Support",
+      "url": "https://arqudrix.com",
+      "email": "support@arqudrix.com"
+    },
+    "license": {
+      "name": "Proprietary",
+      "url": "https://arqudrix.com/license"
+    }
+  },
+  
+  "servers": [
+    {
+      "url": "http://localhost:8000/api",
+      "description": "Development server"
+    },
+    {
+      "url": "https://app.arqudrix.com/api",
+      "description": "Production server"
+    }
+  ],
+
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+
+  "paths": {
+    "/dashboards": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "List dashboards",
+        "operationId": "listDashboards",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Results per page",
+            "schema": { "type": "integer", "default": 50 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of dashboards",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Dashboard" }
+                    },
+                    "pagination": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Dashboard"],
+        "summary": "Create dashboard",
+        "operationId": "createDashboard",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DashboardInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Dashboard created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Dashboard" }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/customers": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "List customers",
+        "operationId": "listCustomers",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["active", "suspended", "inactive"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of customers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Customer" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Customers"],
+        "summary": "Create customer",
+        "operationId": "createCustomer",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CustomerInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Customer created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Customer" }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/customers/{customerId}": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Get customer details",
+        "operationId": "getCustomer",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Customer" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Customers"],
+        "summary": "Update customer",
+        "operationId": "updateCustomer",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CustomerInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Customer updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Customer" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Customers"],
+        "summary": "Delete customer",
+        "operationId": "deleteCustomer",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Customer deleted"
+          }
+        }
+      }
+    },
+
+    "/billing/invoices": {
+      "get": {
+        "tags": ["Billing"],
+        "summary": "List invoices",
+        "operationId": "listInvoices",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "query",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["draft", "sent", "paid", "overdue"] }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "schema": { "type": "string", "format": "date" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of invoices",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Invoice" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/billing/invoices/{invoiceId}": {
+      "get": {
+        "tags": ["Billing"],
+        "summary": "Get invoice details",
+        "operationId": "getInvoice",
+        "parameters": [
+          {
+            "name": "invoiceId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invoice details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Invoice" }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/network/devices": {
+      "get": {
+        "tags": ["Network"],
+        "summary": "List network devices",
+        "operationId": "listDevices",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["olt", "onu", "router", "access-point"] }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["online", "offline", "maintenance"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of devices",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Device" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/support/tickets": {
+      "get": {
+        "tags": ["Support"],
+        "summary": "List support tickets",
+        "operationId": "listTickets",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["open", "in-progress", "resolved", "closed"] }
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["low", "medium", "high", "urgent"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of tickets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Ticket" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Support"],
+        "summary": "Create support ticket",
+        "operationId": "createTicket",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TicketInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Ticket created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Ticket" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Bearer token"
+      }
+    },
+
+    "schemas": {
+      "Dashboard": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "widgets": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Widget" }
+          },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+
+      "DashboardInput": {
+        "type": "object",
+        "required": ["name", "widgets"],
+        "properties": {
+          "name": { "type": "string" },
+          "widgets": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Widget" }
+          }
+        }
+      },
+
+      "Widget": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string" },
+          "name": { "type": "string" },
+          "size": { "type": "string", "enum": ["small", "medium", "large", "full"] },
+          "refreshRate": { "type": "integer" },
+          "dataSource": { "type": "string" }
+        }
+      },
+
+      "Customer": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "phone": { "type": "string" },
+          "status": { "type": "string", "enum": ["active", "suspended", "inactive"] },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+
+      "CustomerInput": {
+        "type": "object",
+        "required": ["name", "email"],
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "phone": { "type": "string" },
+          "address": { "type": "string" },
+          "package": { "type": "string" }
+        }
+      },
+
+      "Invoice": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "customerId": { "type": "string" },
+          "amount": { "type": "number", "format": "decimal" },
+          "status": { "type": "string", "enum": ["draft", "sent", "paid", "overdue"] },
+          "dueDate": { "type": "string", "format": "date" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+
+      "Device": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "type": { "type": "string" },
+          "ipAddress": { "type": "string", "format": "ipv4" },
+          "status": { "type": "string", "enum": ["online", "offline", "maintenance"] },
+          "uptime": { "type": "number" },
+          "lastSeen": { "type": "string", "format": "date-time" }
+        }
+      },
+
+      "Ticket": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "subject": { "type": "string" },
+          "description": { "type": "string" },
+          "status": { "type": "string", "enum": ["open", "in-progress", "resolved", "closed"] },
+          "priority": { "type": "string", "enum": ["low", "medium", "high", "urgent"] },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+
+      "TicketInput": {
+        "type": "object",
+        "required": ["subject", "description"],
+        "properties": {
+          "subject": { "type": "string" },
+          "description": { "type": "string" },
+          "customerId": { "type": "string" },
+          "priority": { "type": "string", "enum": ["low", "medium", "high", "urgent"] },
+          "attachments": {
+            "type": "array",
+            "items": { "type": "string", "format": "binary" }
+          }
+        }
+      },
+
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "total": { "type": "integer" },
+          "totalPages": { "type": "integer" }
+        }
+      },
+
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "details": { "type": "object" }
+        }
+      }
+    }
+  }
+}

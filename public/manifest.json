@@ -1,0 +1,188 @@
+{
+  "name": "AR Qudrix ISP OS",
+  "short_name": "AR Qudrix",
+  "description": "All-in-one Broadband ISP Management Platform with BTRC Compliance, Offline Support & Multi-Tenant Architecture",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#2196F3",
+  "background_color": "#FFFFFF",
+  
+  "icons": [
+    {
+      "src": "/images/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/icon-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/images/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+
+  "screenshots": [
+    {
+      "src": "/images/screenshot-1.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Dashboard Overview"
+    },
+    {
+      "src": "/images/screenshot-2.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Customer Portal"
+    }
+  ],
+
+  "categories": [
+    "productivity",
+    "business"
+  ],
+
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View ISP Dashboard",
+      "url": "/dashboard?mode=home",
+      "icons": [
+        {
+          "src": "/images/shortcut-dashboard.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "short_name": "Customers",
+      "description": "Manage Customers",
+      "url": "/customers",
+      "icons": [
+        {
+          "src": "/images/shortcut-customers.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Billing",
+      "short_name": "Billing",
+      "description": "View Invoices",
+      "url": "/billing/invoices",
+      "icons": [
+        {
+          "src": "/images/shortcut-billing.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Network",
+      "short_name": "Network",
+      "description": "Network Monitoring",
+      "url": "/network/devices",
+      "icons": [
+        {
+          "src": "/images/shortcut-network.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+
+  "protocol_handlers": [
+    {
+      "protocol": "web+arqudrix",
+      "url": "/protocol?url=%s"
+    }
+  ],
+
+  "file_handlers": [
+    {
+      "action": "/import",
+      "accept": {
+        "application/json": [".arqx"],
+        "text/csv": [".csv"]
+      },
+      "icons": [
+        {
+          "src": "/images/import-icon.png",
+          "sizes": "256x256",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+
+  "prefer_related_applications": false,
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.arqudrix.isp",
+      "id": "com.arqudrix.isp"
+    },
+    {
+      "platform": "itunes",
+      "url": "https://apps.apple.com/app/ar-qudrix/id123456789"
+    }
+  ],
+
+  "serviceworker": {
+    "src": "/sw.js",
+    "scope": "/",
+    "update_via_cache": "none"
+  },
+
+  "screenshots_large": [
+    {
+      "src": "/images/screenshot-large-1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/images/screenshot-large-2.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+
+  "launch_handler": {
+    "client_mode": ["navigate-new", "auto"]
+  }
+}

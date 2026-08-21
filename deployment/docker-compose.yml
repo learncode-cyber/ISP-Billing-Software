@@ -1,0 +1,91 @@
+# ============================================================
+# AR Qudrix ISP OS — Deployment (Blueprint Section 31)
+# Containerized services, separated by workload. This compose file is the
+# reference topology; production uses the same service boundaries on
+# Kubernetes / managed equivalents with read replicas + autoscaling.
+# ============================================================
+version: "3.9"
+
+services:
+  # ---- Laravel API (stateless, horizontally scalable) ----
+  api:
+    build: ./backend
+    environment:
+      APP_ENV: production
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      # App connects as arq_app_role (RLS-enforced). The BYPASSRLS
+      # platform-admin role is a SEPARATE connection used only by
+      # Super Admin console code paths.
+      DB_USERNAME: arq_app_role
+      REDIS_HOST: redis
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+    depends_on: [postgres, redis]
+    # HTTPS terminated at the ingress/load balancer in front of this.
+
+  # ---- Queue workers (Horizon), one process per workload queue class ----
+  worker-billing:
+    build: ./backend
+    command: php artisan horizon
+    environment: { QUEUE: billing, DB_USERNAME: arq_app_role }
+    depends_on: [postgres, redis]
+  worker-network:
+    build: ./backend
+    command: php artisan horizon
+    environment: { QUEUE: network, DB_USERNAME: arq_app_role }
+    depends_on: [postgres, redis]
+  worker-notifications:
+    build: ./backend
+    command: php artisan horizon
+    environment: { QUEUE: notifications, DB_USERNAME: arq_app_role }
+    depends_on: [postgres, redis]
+  worker-automation:
+    build: ./backend
+    command: php artisan horizon
+    environment: { QUEUE: automation, DB_USERNAME: arq_app_role }
+    depends_on: [postgres, redis]
+  worker-ai:
+    build: ./backend
+    command: php artisan horizon
+    environment: { QUEUE: ai, DB_USERNAME: arq_app_role }
+    depends_on: [postgres, redis]
+  worker-webhooks:
+    build: ./backend
+    command: php artisan horizon
+    environment: { QUEUE: webhooks, DB_USERNAME: arq_app_role }
+    depends_on: [postgres, redis]
+
+  # ---- Scheduler (single instance; dispatches per-tenant jobs) ----
+  scheduler:
+    build: ./backend
+    command: php artisan schedule:work
+    environment: { DB_USERNAME: arq_app_role }
+    depends_on: [postgres, redis]
+
+  # ---- React frontend (built static assets, CDN-served in prod) ----
+  frontend:
+    build: ./frontend
+    # Serves the Admin PWA. Customer Portal + Technician app are separate
+    # builds of the same design system consuming /api/v1 and /api/v1/portal.
+
+  # ---- PostgreSQL (managed w/ read replicas in prod) ----
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: arq_isp_os
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Backups: nightly full + continuous WAL archiving to off-site
+      # encrypted storage (Blueprint Section 30). Restore drills quarterly.
+
+  # ---- Redis (cache + queue + rate limit) ----
+  redis:
+    image: redis:7
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata:
+  redisdata:

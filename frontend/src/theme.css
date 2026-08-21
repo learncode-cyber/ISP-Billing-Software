@@ -1,0 +1,192 @@
+/* theme.css — design tokens + responsive system for the ARQ ISP OS admin
+   console. An operations tool: colour is functional (status carries
+   meaning), type is dense and fast, numbers are tabular so money/counts
+   align. Fully responsive 320px → 1920px per spec Section 4. */
+
+:root {
+  /* Ground & surfaces */
+  --bg-shell: #0f172a;
+  --bg-shell-hover: #1e293b;
+  --bg-canvas: #f1f5f9;
+  --bg-card: #ffffff;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  /* Ink */
+  --ink: #1e293b;
+  --ink-soft: #475569;
+  --ink-faint: #94a3b8;
+  --ink-invert: #f8fafc;
+
+  /* Functional signal palette — these MEAN things, not decoration */
+  --primary: #2563eb;
+  --primary-ink: #ffffff;
+  --ok: #16a34a;      --ok-bg: #dcfce7;
+  --danger: #dc2626;  --danger-bg: #fee2e2;
+  --warn: #d97706;    --warn-bg: #fef3c7;
+  --info: #0891b2;    --info-bg: #cffafe;
+
+  /* Type */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-num: "SF Mono", "Roboto Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  /* Layout */
+  --sidebar-w: 244px;
+  --page-pad: 28px;
+  --touch: 44px;            /* minimum touch target (WCAG 2.5.5) */
+
+  --radius: 8px;
+  --radius-sm: 5px;
+  --shadow-card: 0 1px 2px rgba(15,23,42,.06), 0 1px 3px rgba(15,23,42,.05);
+  --shadow-pop: 0 8px 24px rgba(15,23,42,.12);
+}
+
+* { box-sizing: border-box; }
+
+html, body { max-width: 100%; overflow-x: hidden; }  /* no page-level horizontal scroll, ever */
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background: var(--bg-canvas);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+/* ---------- Status pills ---------- */
+.pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 9px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; letter-spacing: .01em;
+  white-space: nowrap;
+}
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill-ok     { color: var(--ok);     background: var(--ok-bg); }
+.pill-danger { color: var(--danger); background: var(--danger-bg); }
+.pill-warn   { color: var(--warn);   background: var(--warn-bg); }
+.pill-info   { color: var(--info);   background: var(--info-bg); }
+
+/* ---------- Buttons: touch-target compliant ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 38px; padding: 8px 14px; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 600; border: 1px solid transparent;
+  cursor: pointer; transition: background .12s, border-color .12s;
+  touch-action: manipulation;
+}
+.btn-primary { background: var(--primary); color: var(--primary-ink); }
+.btn-primary:hover { background: #1d4ed8; }
+.btn-primary:disabled { opacity: .55; cursor: not-allowed; }
+.btn-ghost { background: transparent; color: var(--ink-soft); border-color: var(--border-strong); }
+.btn-ghost:hover { background: #fff; border-color: var(--ink-faint); }
+/* Compact row-action buttons still meet touch minimum on coarse pointers */
+@media (pointer: coarse) {
+  .btn { min-height: var(--touch); padding-left: 16px; padding-right: 16px; }
+  /* Nav links are controls too — they must meet the same touch floor.
+     Found by real-browser QA: sidebar links were 40px at 320–600px. */
+  nav a { min-height: var(--touch) !important; }
+  /* Tab strips are plain buttons; they must meet the floor as well.
+     Found by real-browser QA on the MikroTik/Billing/Inventory tabs. */
+  [role="tablist"] button, .tabstrip button { min-height: var(--touch); }
+}
+/* Belt-and-braces for small viewports where the pointer media feature may
+   not be reported (some in-app webviews), keyed on width instead. */
+@media (max-width: 767px) {
+  .btn { min-height: var(--touch); }
+  nav a { min-height: var(--touch) !important; }
+  .tabstrip button { min-height: var(--touch); }
+}
+
+/* Tab strips — real class so the touch-target floor applies (inline
+   styles previously bypassed it, found by portal browser QA). */
+.tab-btn {
+  padding: 9px 14px; border: none; background: none; cursor: pointer;
+  font-size: 13.5px; font-weight: 600; white-space: nowrap; flex-shrink: 0;
+  color: var(--ink-soft); border-bottom: 2px solid transparent; margin-bottom: -1px;
+  min-height: 40px;
+}
+.tab-btn[aria-selected="true"] { color: var(--primary); border-bottom-color: var(--primary); }
+@media (pointer: coarse), (max-width: 767px) {
+  .tab-btn { min-height: var(--touch); }
+}
+
+/* ---------- Cards & tables ---------- */
+.card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-card);
+}
+
+/* Tables live inside .table-scroll — horizontal scrolling is contained to
+   the table itself, never the page (spec Section 4). */
+.table-scroll {
+  width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+table { width: 100%; border-collapse: collapse; min-width: 560px; }
+th {
+  text-align: left; font-size: 11px; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--ink-faint); font-weight: 600;
+  padding: 10px 14px; border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+td { padding: 11px 14px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+tr:hover td { background: #f8fafc; }
+
+/* ---------- Card transformation: tables become stacked cards on phones.
+   Each cell shows its column label via data-label, so no data is lost and
+   no horizontal scrolling is needed for the common case. ---------- */
+@media (max-width: 640px) {
+  .table-scroll { overflow-x: visible; }
+  table.responsive-cards { min-width: 0; }
+  table.responsive-cards thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  table.responsive-cards tr {
+    display: block; border: 1px solid var(--border); border-radius: var(--radius);
+    margin-bottom: 10px; padding: 4px 0; background: #fff;
+  }
+  table.responsive-cards td {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    border: none; padding: 8px 14px; text-align: right !important;
+  }
+  table.responsive-cards td::before {
+    content: attr(data-label);
+    font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
+    color: var(--ink-faint); font-weight: 600; text-align: left; flex-shrink: 0;
+  }
+  table.responsive-cards td:empty { display: none; }
+  table.responsive-cards tr:hover td { background: transparent; }
+}
+
+/* ---------- Responsive layout breakpoints ---------- */
+/* Tablet and below: sidebar becomes an off-canvas drawer. */
+@media (max-width: 1023px) {
+  :root { --page-pad: 18px; }
+}
+@media (max-width: 640px) {
+  :root { --page-pad: 14px; }
+  body { font-size: 13.5px; }
+}
+@media (max-width: 380px) {
+  :root { --page-pad: 12px; }
+}
+
+/* Inputs: 16px font on mobile prevents iOS zoom-on-focus */
+input, select, textarea {
+  font-family: inherit; max-width: 100%;
+}
+@media (max-width: 640px) {
+  input, select, textarea { font-size: 16px !important; min-height: var(--touch); }
+}
+
+/* ---------- Accessibility floor ---------- */
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* Screen-reader-only utility */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
